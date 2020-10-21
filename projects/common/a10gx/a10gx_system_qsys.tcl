@@ -176,7 +176,7 @@ set_instance_parameter_value sys_cpu {mmu_autoAssignTlbPtrSz} {0}
 set_instance_parameter_value sys_cpu {mmu_TLBMissExcOffset} {4096}
 set_instance_parameter_value sys_cpu {resetSlave} {sys_flash.uas}
 set_instance_parameter_value sys_cpu {mmu_TLBMissExcSlave} {sys_tlb_mem.s2}
-set_instance_parameter_value sys_cpu {exceptionSlave} {sys_ddr3_cntrl.ctrl_amm_0}
+set_instance_parameter_value sys_cpu {exceptionSlave} {sys_int_mem.s1}
 set_instance_parameter_value sys_cpu {breakSlave} {sys_cpu.jtag_debug_module}
 set_instance_parameter_value sys_cpu {mul_32_impl} {3}
 set_instance_parameter_value sys_cpu {shift_rot_impl} {0}
@@ -223,6 +223,9 @@ proc ad_cpu_interrupt {m_irq m_port} {
 
 }
 
+# Creates a connection to the main memory interconnect with or without a bridge
+# The direct connection's or the bridge base address must be above 0x10000000,
+# being the first 256MB space occupied by the DDR3
 proc ad_cpu_interconnect {m_base m_port {avl_bridge ""} {avl_bridge_baseaddr 0x10000000}} {
 
   if {[string equal ${avl_bridge} ""]} {
@@ -235,7 +238,7 @@ proc ad_cpu_interconnect {m_base m_port {avl_bridge ""} {avl_bridge_baseaddr 0x1
       set_instance_parameter_value ${avl_bridge} {USE_AUTO_ADDRESS_WIDTH} {1}
       set_instance_parameter_value ${avl_bridge} {SYNC_RESET} {1}
       add_connection sys_cpu.data_master ${avl_bridge}.s0
-      set_connection_parameter_value sys_cpu.data_master/${avl_bridge}.s0 baseAddress ${avl_bridge_baseaddr}
+      set_connection_parameter_value sys_cpu.data_master/${avl_bridge}.s0 baseAddress [expr (${avl_bridge_baseaddr} + 0x10000000)]
       add_connection sys_clk.clk ${avl_bridge}.clk
       add_connection sys_clk.clk_reset ${avl_bridge}.reset
     }

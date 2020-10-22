@@ -24,8 +24,9 @@ set RX_OS_SAMPLES_PER_CHANNEL [expr $RX_OS_NUM_OF_LANES * 32 / \
                                    ($RX_OS_NUM_OF_CONVERTERS * $RX_OS_SAMPLE_WIDTH)] ; # L * 32 / (M * N)
 
 set dac_fifo_name avl_fmcomms8_tx_fifo
-set dac_data_width 256
-set dac_dma_data_width 256
+set dac_data_width [expr $TX_SAMPLE_WIDTH * \
+                         $TX_NUM_OF_CONVERTERS * \
+                         $TX_SAMPLES_PER_CHANNEL]
 
 # JESD204B/C clock bridges
 
@@ -183,7 +184,7 @@ add_connection axi_fmcomms8_rx_os_cpack.if_fifo_wr_overflow axi_fmcomms8_rx_os.i
 
 # dac fifo
 
-ad_dacfifo_create $dac_fifo_name $dac_data_width $dac_dma_data_width $dac_fifo_address_width
+ad_dacfifo_create $dac_fifo_name $dac_data_width $dac_data_width $dac_fifo_address_width
 
 add_interface tx_fifo_bypass conduit end
 set_interface_property tx_fifo_bypass EXPORT_OF avl_fmcomms8_tx_fifo.if_bypass
@@ -199,9 +200,7 @@ add_connection avl_fmcomms8_tx_fifo.if_dac_dunf axi_fmcomms8_tx.if_dac_dunf
 add_instance axi_fmcomms8_tx_dma axi_dmac
 set_instance_parameter_value axi_fmcomms8_tx_dma {ID} {0}
 set_instance_parameter_value axi_fmcomms8_tx_dma {DMA_DATA_WIDTH_SRC} {128}
-set_instance_parameter_value axi_fmcomms8_tx_dma {DMA_DATA_WIDTH_DEST} [expr $TX_SAMPLE_WIDTH * \
-                                                                             $TX_NUM_OF_CONVERTERS * \
-                                                                             $TX_SAMPLES_PER_CHANNEL]
+set_instance_parameter_value axi_fmcomms8_tx_dma {DMA_DATA_WIDTH_DEST} $dac_data_width
 set_instance_parameter_value axi_fmcomms8_tx_dma {DMA_LENGTH_WIDTH} {24}
 set_instance_parameter_value axi_fmcomms8_tx_dma {DMA_2D_TRANSFER} {0}
 set_instance_parameter_value axi_fmcomms8_tx_dma {AXI_SLICE_DEST} {1}
@@ -250,7 +249,9 @@ add_connection sys_dma_clk_2.clk_reset axi_fmcomms8_rx_dma.m_dest_axi_reset
 
 add_instance axi_fmcomms8_rx_os_dma axi_dmac
 set_instance_parameter_value axi_fmcomms8_rx_os_dma {ID} {0}
-set_instance_parameter_value axi_fmcomms8_rx_os_dma {DMA_DATA_WIDTH_SRC} [expr 32*$RX_OS_NUM_OF_LANES]
+set_instance_parameter_value axi_fmcomms8_rx_os_dma {DMA_DATA_WIDTH_SRC} [expr $RX_OS_SAMPLE_WIDTH * \
+                                                                            $RX_OS_NUM_OF_CONVERTERS * \
+                                                                            $RX_OS_SAMPLES_PER_CHANNEL]
 set_instance_parameter_value axi_fmcomms8_rx_os_dma {DMA_DATA_WIDTH_DEST} {128}
 set_instance_parameter_value axi_fmcomms8_rx_os_dma {DMA_LENGTH_WIDTH} {24}
 set_instance_parameter_value axi_fmcomms8_rx_os_dma {DMA_2D_TRANSFER} {0}
@@ -289,22 +290,16 @@ for {set i 0} {$i < 8} {incr i} {
   add_connection sys_clk.clk avl_adxcfg_${i}.rcfg_clk
   add_connection sys_clk.clk_reset avl_adxcfg_${i}.rcfg_reset_n
   add_connection avl_adxcfg_${i}.rcfg_m0 fmcomms8_tx_jesd204.phy_reconfig_${i}
-
-#  if {$i < 2} {
-#    add_connection avl_adxcfg_${i}.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_${i}
-#  } else {
-#    set j [expr $i - 2]
-#    add_connection avl_adxcfg_${i}.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_${j}
-#  }
 }
-    add_connection avl_adxcfg_0.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_0
-    add_connection avl_adxcfg_1.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_1
-    add_connection avl_adxcfg_4.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_2
-    add_connection avl_adxcfg_5.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_3
-    add_connection avl_adxcfg_2.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_0
-    add_connection avl_adxcfg_3.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_1
-    add_connection avl_adxcfg_6.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_2
-    add_connection avl_adxcfg_7.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_3
+
+add_connection avl_adxcfg_0.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_0
+add_connection avl_adxcfg_1.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_1
+add_connection avl_adxcfg_2.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_0
+add_connection avl_adxcfg_3.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_1
+add_connection avl_adxcfg_4.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_2
+add_connection avl_adxcfg_5.rcfg_m1 fmcomms8_rx_jesd204.phy_reconfig_3
+add_connection avl_adxcfg_6.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_2
+add_connection avl_adxcfg_7.rcfg_m1 fmcomms8_rx_os_jesd204.phy_reconfig_3
 
 add_interface core_clk_c   clock   sink
 set_interface_property core_clk_c    EXPORT_OF core_clk_c.in_clk
@@ -314,42 +309,41 @@ set_interface_property core_clk_d    EXPORT_OF core_clk_d.in_clk
 
 # addresses
 
-ad_cpu_interconnect 0x00020000 fmcomms8_tx_jesd204.link_reconfig
-ad_cpu_interconnect 0x00024000 fmcomms8_tx_jesd204.link_management
-ad_cpu_interconnect 0x00025000 fmcomms8_tx_jesd204.link_pll_reconfig
-ad_cpu_interconnect 0x00026000 fmcomms8_tx_jesd204.lane_pll_reconfig
-ad_cpu_interconnect 0x00028000 avl_adxcfg_0.rcfg_s0
-ad_cpu_interconnect 0x00029000 avl_adxcfg_1.rcfg_s0
-ad_cpu_interconnect 0x0002a000 avl_adxcfg_2.rcfg_s0
-ad_cpu_interconnect 0x0002b000 avl_adxcfg_3.rcfg_s0
-ad_cpu_interconnect 0x0002c000 avl_adxcfg_4.rcfg_s0
-ad_cpu_interconnect 0x0002d000 avl_adxcfg_5.rcfg_s0
-ad_cpu_interconnect 0x0002e000 avl_adxcfg_6.rcfg_s0
-ad_cpu_interconnect 0x0002f000 avl_adxcfg_7.rcfg_s0
-ad_cpu_interconnect 0x00070000 axi_fmcomms8_tx_dma.s_axi
+ad_cpu_interconnect 0x00000000 fmcomms8_tx_jesd204.link_reconfig        "axi_mm_bridge_0" 0x00060000
+ad_cpu_interconnect 0x00004000 fmcomms8_rx_jesd204.link_reconfig        "axi_mm_bridge_0"
+ad_cpu_interconnect 0x00008000 fmcomms8_rx_os_jesd204.link_reconfig     "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0000C000 fmcomms8_tx_jesd204.link_management      "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0000D000 fmcomms8_rx_jesd204.link_management      "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0000E000 fmcomms8_rx_os_jesd204.link_management   "axi_mm_bridge_0"
+ad_cpu_interconnect 0x00010000 axi_fmcomms8_rx.s_axi                    "axi_mm_bridge_0"
+ad_cpu_interconnect 0x00014000 axi_fmcomms8_tx.s_axi                    "axi_mm_bridge_0"
+ad_cpu_interconnect 0x00018000 axi_fmcomms8_rx_os.s_axi                 "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0001c000 axi_fmcomms8_tx_dma.s_axi                "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0001d000 axi_fmcomms8_rx_dma.s_axi                "axi_mm_bridge_0"
+ad_cpu_interconnect 0x0001e000 axi_fmcomms8_rx_os_dma.s_axi             "axi_mm_bridge_0"
 
-ad_cpu_interconnect 0x00030000 fmcomms8_rx_jesd204.link_reconfig
-ad_cpu_interconnect 0x00034000 fmcomms8_rx_jesd204.link_management
-ad_cpu_interconnect 0x00035000 fmcomms8_rx_jesd204.link_pll_reconfig
-ad_cpu_interconnect 0x00038000 avl_adxcfg_0.rcfg_s1
-ad_cpu_interconnect 0x00039000 avl_adxcfg_1.rcfg_s1
-ad_cpu_interconnect 0x0003a000 avl_adxcfg_4.rcfg_s1
-ad_cpu_interconnect 0x0003b000 avl_adxcfg_5.rcfg_s1
-ad_cpu_interconnect 0x0003c000 axi_fmcomms8_rx_dma.s_axi
+ad_cpu_interconnect 0x00000000 fmcomms8_tx_jesd204.link_pll_reconfig    "avl_mm_bridge_tx" 0x00080000
+ad_cpu_interconnect 0x00001000 fmcomms8_tx_jesd204.lane_pll_reconfig    "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00002000 avl_adxcfg_0.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00003000 avl_adxcfg_1.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00004000 avl_adxcfg_2.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00005000 avl_adxcfg_3.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00006000 avl_adxcfg_4.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00007000 avl_adxcfg_5.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00008000 avl_adxcfg_6.rcfg_s0                     "avl_mm_bridge_tx"
+ad_cpu_interconnect 0x00009000 avl_adxcfg_7.rcfg_s0                     "avl_mm_bridge_tx"
 
-ad_cpu_interconnect 0x00040000 fmcomms8_rx_os_jesd204.link_reconfig
-ad_cpu_interconnect 0x00044000 fmcomms8_rx_os_jesd204.link_management
-ad_cpu_interconnect 0x00045000 fmcomms8_rx_os_jesd204.link_pll_reconfig
-ad_cpu_interconnect 0x00048000 avl_adxcfg_2.rcfg_s1
-ad_cpu_interconnect 0x00049000 avl_adxcfg_3.rcfg_s1
-ad_cpu_interconnect 0x0004a000 avl_adxcfg_6.rcfg_s1
-ad_cpu_interconnect 0x0004b000 avl_adxcfg_7.rcfg_s1
-ad_cpu_interconnect 0x0004c000 axi_fmcomms8_rx_os_dma.s_axi
-
-ad_cpu_interconnect 0x00050000 axi_fmcomms8_rx.s_axi
-ad_cpu_interconnect 0x00054000 axi_fmcomms8_tx.s_axi
-ad_cpu_interconnect 0x00058000 axi_fmcomms8_rx_os.s_axi
-ad_cpu_interconnect 0x00060000 avl_fmcomms8_gpio.s1
+ad_cpu_interconnect 0x00000000 fmcomms8_rx_jesd204.link_pll_reconfig    "avl_mm_bridge_rx" 0x00090000
+ad_cpu_interconnect 0x00001000 fmcomms8_rx_os_jesd204.link_pll_reconfig "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00002000 avl_adxcfg_0.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00003000 avl_adxcfg_1.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00004000 avl_adxcfg_2.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00005000 avl_adxcfg_3.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00006000 avl_adxcfg_4.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00007000 avl_adxcfg_5.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00008000 avl_adxcfg_6.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x00009000 avl_adxcfg_7.rcfg_s1                     "avl_mm_bridge_rx"
+ad_cpu_interconnect 0x0000a900 avl_fmcomms8_gpio.s1                     "avl_mm_bridge_rx"
 
 # dma interconnects
 

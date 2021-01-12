@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd doc
-          sudo apt install doxygen -y
+          sudo apt install doxygen python3-gi -y
           pip install -r requirements_doc.txt
           cd ..
 

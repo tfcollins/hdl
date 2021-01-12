@@ -1,6 +1,6 @@
 sphinx
 sphinx-rtd-theme
 breathe
-cairo
+pycairo
 symbolator
 sphinx_sitemap

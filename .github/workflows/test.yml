@@ -1,0 +1,32 @@
+name: CI Pushes
+
+on: [push]
+
+jobs:
+  Doc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - name: Install dependencies
+        run: |
+          cd doc
+          apt install doxygen -y
+          pip install -r requirements_doc.txt
+          cd ..
+
+      - name: Build doc
+        run: |
+          cd doc && make html
+          cd ..
+
+      - name: Publish doc
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./doc/_build/html

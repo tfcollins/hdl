@@ -444,6 +444,12 @@ the Vivado Tcl console building mode to build the BOOT.BIN (see
    specify its name, for example :code:`adi_make::lib axi_dmac` or
    :code:`adi_make::lib jesd204/jesd204_rx`.
 
+   By default the libraries are packaged one at a time. To build them in
+   parallel (while still respecting the dependencies between them), either set
+   the ``ADI_MAX_JOBS`` environment variable or pass the number of parallel jobs
+   as a second argument, for example :code:`adi_make::lib all 8`. Use
+   :code:`adi_make::lib all 0` to use all available CPU cores.
+
    To build the project itself, you need to run
 
    :code:`source ./system_project.tcl`

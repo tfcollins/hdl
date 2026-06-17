@@ -595,8 +595,12 @@ when building a project:
   resource utilization for the design and specific IPs.
 - **ADI_GENERATE_XPA**: if set, runs a Xilinx Power Analysis (XPA) and generates
   a summary report.
+- **ADI_MAX_JOBS**: the unified knob for build parallelism. It sets the number
+  of parallel jobs used both for packaging IP libraries and for Out-of-Context
+  (OOC) synthesis. A value of ``0`` (or ``auto``) uses all available CPU cores.
 - **ADI_MAX_OOC_JOBS**: specifies the number of parallel jobs to use for
-  Out-of-Context (OOC) synthesis.
+  Out-of-Context (OOC) synthesis. When set, it takes precedence over
+  ``ADI_MAX_JOBS`` for the synthesis stage; if neither is set the default is 4.
 - **ADI_MAX_THREADS**: specifies the maximum number of threads for Vivado
   operations. Default value is 8.
 - **ADI_NO_BITSTREAM_COMPRESSION**: if set, disables compression of the final
@@ -615,10 +619,12 @@ when building a project:
   in parallel.
 
 You can opt in for out-of-context synthesis during the build by defining
-the ``ADI_USE_OOC_SYNTHESIS`` system variable. By setting the
-``ADI_MAX_OOC_JOBS`` system variable you can adjust the number of
-maximum parallel out-of-context synthesis jobs. If not set, the default
-parallel job number is set to 4.
+the ``ADI_USE_OOC_SYNTHESIS`` system variable. To adjust the number of
+maximum parallel out-of-context synthesis jobs, set the unified
+``ADI_MAX_JOBS`` variable (which also controls IP library packaging), or
+the ``ADI_MAX_OOC_JOBS`` variable, which overrides it for the synthesis
+stage. A value of ``0`` uses all available CPU cores. If neither is set,
+the default parallel job number is 4.
 
 .. shell:: bash
 

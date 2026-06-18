@@ -15,12 +15,12 @@ if {[info exists ::env(ADI_USE_OOC_SYNTHESIS)]} {
    set ADI_USE_OOC_SYNTHESIS 1
 }
 
-## Set number of parallel out of context jobs through environment variable
-if {![info exists ::env(ADI_MAX_OOC_JOBS)]} {
-  set ADI_MAX_OOC_JOBS 4
-} else {
-  set ADI_MAX_OOC_JOBS $::env(ADI_MAX_OOC_JOBS)
-}
+## Set number of parallel out of context jobs. The unified ADI_MAX_JOBS knob
+## controls parallelism for both IP packaging and OOC synthesis; ADI_MAX_OOC_JOBS
+## still takes precedence for the synthesis stage when set. A value of 0 (or
+## "auto") uses all available CPU cores. (adi_env.tcl is sourced first and
+## provides adi_resolve_jobs.)
+set ADI_MAX_OOC_JOBS [adi_resolve_jobs 4 ADI_MAX_OOC_JOBS]
 
 ## Set to enable incremental compilation
 set ADI_USE_INCR_COMP 1

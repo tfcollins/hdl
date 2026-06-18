@@ -81,3 +81,42 @@ proc get_env_param {name default_value} {
     return $default_value
   }
 }
+
+# Returns a usable CPU core count (cross platform). Falls back to 1 when it
+# cannot be determined (e.g. nproc missing and NUMBER_OF_PROCESSORS unset).
+proc adi_cpu_count {} {
+  set cores 1
+  if {![catch {exec nproc} out] && [string is integer -strict [string trim $out]]} {
+    set cores [string trim $out]
+  } elseif {[info exists ::env(NUMBER_OF_PROCESSORS)] && \
+            [string is integer -strict $::env(NUMBER_OF_PROCESSORS)]} {
+    set cores $::env(NUMBER_OF_PROCESSORS)
+  }
+  if {$cores < 1} {
+    set cores 1
+  }
+  return $cores
+}
+
+# Resolves a parallel-jobs count from the environment. Precedence:
+#   $override env var (when set) > ADI_MAX_JOBS env var > $default
+# A value of 0 or "auto" means "use all available CPU cores". An invalid value
+# falls back to 1. This is the single knob used across the build flows
+# (IP packaging and out-of-context synthesis).
+proc adi_resolve_jobs {default {override ""}} {
+  if {$override ne "" && [info exists ::env($override)]} {
+    set n $::env($override)
+  } elseif {[info exists ::env(ADI_MAX_JOBS)]} {
+    set n $::env(ADI_MAX_JOBS)
+  } else {
+    set n $default
+  }
+  if {$n eq "auto" || ([string is integer -strict $n] && $n == 0)} {
+    set n [adi_cpu_count]
+  }
+  if {![string is integer -strict $n] || $n < 1} {
+    puts "WARNING: invalid job count '$n', falling back to 1"
+    set n 1
+  }
+  return $n
+}

@@ -216,6 +216,14 @@ ad_connect sconnect_0/aclk ddr4_0/c0_ddr4_ui_clk
 ad_connect sys_ps8/maxihpm0_fpd_aclk ddr4_0/c0_ddr4_ui_clk
 ad_connect sconnect_0/aresetn ddr4_0_rstgen/peripheral_aresetn
 
+# MIG 0 does not fit the 256 MB low window of M_AXI_HPM0_FPD, place it in the
+# high window (0x4_0000_0000) so the PS can access it
+
+create_bd_addr_seg -range 0x80000000 -offset 0x400000000 \
+  [get_bd_addr_spaces sys_ps8/Data] \
+  [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] \
+  SEG_ddr4_0_C0_DDR4_ADDRESS_BLOCK
+
 ad_connect ddr_calib_concat/In0 ddr4_0/c0_init_calib_complete
 ad_connect ddr_calib_concat/In1 ddr4_1/c0_init_calib_complete
 ad_connect ddr_calib_gpio/gpio_io_i ddr_calib_concat/dout

@@ -52,7 +52,8 @@ shared by both of its parts. The init_calib_complete outputs of the two MIGs are
 individual part.
 
 The MIG 0 pins are constrained in prod_constr.xdc and the MIG 1 pins in ../common/adrv9009zu11eg_constr.xdc.
-MIG 0 is accessed only by the PS through M_AXI_HPM0_FPD. MIG 1 is used by the TX DAC FIFO (axi_tx_fifo).
+MIG 0 is accessed only by the PS through M_AXI_HPM0_FPD, at physical address 0x4_0000_0000 (2 GB). MIG 1
+is used by the TX DAC FIFO (axi_tx_fifo).
 
 The PS DDR is configured in sys_ps8 as a 64-bit interface with ECC. Its calibration status is not exported to the PL.
 

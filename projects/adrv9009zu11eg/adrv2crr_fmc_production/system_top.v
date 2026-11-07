@@ -36,7 +36,15 @@
 
 `timescale 1ns/100ps
 
-module system_top (
+module system_top #(
+
+  // PL DDR4 data lane mapping, one parameter per MIG:
+  //   0 - both parts, 32-bit interface (default)
+  //   1 - lower part only, 16-bit interface on dq[15:0]  (MIG 0: U30, MIG 1: U41)
+  //   2 - upper part only, 16-bit interface on dq[31:16] (MIG 0: U31, MIG 1: U42)
+  parameter PL_DDR0_MAP = 0,
+  parameter PL_DDR1_MAP = 0
+) (
 
   inout  [31:0]  fmc_gpio_00_io_tri_io,
   inout  [31:0]  fmc_gpio_01_io_tri_io,
@@ -296,6 +304,13 @@ module system_top (
   inout          spi_sdio,
   input          spi_miso
 );
+
+  // PL DDR4 data lane selection (see PL_DDR*_MAP)
+
+  localparam DDR0_DQ_W  = (PL_DDR0_MAP == 0) ? 32 : 16;
+  localparam DDR0_DQ_LSB = (PL_DDR0_MAP == 2) ? 16 : 0;
+  localparam DDR1_DQ_W  = (PL_DDR1_MAP == 0) ? 32 : 16;
+  localparam DDR1_DQ_LSB = (PL_DDR1_MAP == 2) ? 16 : 0;
 
   // internal signals
 
@@ -714,10 +729,10 @@ module system_top (
     .ddr4_rtl_0_ck_t (ddr4_rtl_0_ck_t),
     .ddr4_rtl_0_cke (ddr4_rtl_0_cke),
     .ddr4_rtl_0_cs_n (ddr4_rtl_0_cs_n),
-    .ddr4_rtl_0_dm_n (ddr4_rtl_0_dm_n),
-    .ddr4_rtl_0_dq (ddr4_rtl_0_dq),
-    .ddr4_rtl_0_dqs_c (ddr4_rtl_0_dqs_c),
-    .ddr4_rtl_0_dqs_t (ddr4_rtl_0_dqs_t),
+    .ddr4_rtl_0_dm_n (ddr4_rtl_0_dm_n[DDR0_DQ_LSB/8 +: DDR0_DQ_W/8]),
+    .ddr4_rtl_0_dq (ddr4_rtl_0_dq[DDR0_DQ_LSB +: DDR0_DQ_W]),
+    .ddr4_rtl_0_dqs_c (ddr4_rtl_0_dqs_c[DDR0_DQ_LSB/8 +: DDR0_DQ_W/8]),
+    .ddr4_rtl_0_dqs_t (ddr4_rtl_0_dqs_t[DDR0_DQ_LSB/8 +: DDR0_DQ_W/8]),
     .ddr4_rtl_0_odt (ddr4_rtl_0_odt),
     .ddr4_rtl_0_reset_n (ddr4_rtl_0_reset_n),
     .ddr4_ref_0_clk_n (ddr4_ref_0_clk_n),
@@ -731,10 +746,10 @@ module system_top (
     .ddr4_rtl_1_ck_t (ddr4_rtl_1_ck_t),
     .ddr4_rtl_1_cke (ddr4_rtl_1_cke),
     .ddr4_rtl_1_cs_n (ddr4_rtl_1_cs_n),
-    .ddr4_rtl_1_dm_n (ddr4_rtl_1_dm_n),
-    .ddr4_rtl_1_dq (ddr4_rtl_1_dq),
-    .ddr4_rtl_1_dqs_c (ddr4_rtl_1_dqs_c),
-    .ddr4_rtl_1_dqs_t (ddr4_rtl_1_dqs_t),
+    .ddr4_rtl_1_dm_n (ddr4_rtl_1_dm_n[DDR1_DQ_LSB/8 +: DDR1_DQ_W/8]),
+    .ddr4_rtl_1_dq (ddr4_rtl_1_dq[DDR1_DQ_LSB +: DDR1_DQ_W]),
+    .ddr4_rtl_1_dqs_c (ddr4_rtl_1_dqs_c[DDR1_DQ_LSB/8 +: DDR1_DQ_W/8]),
+    .ddr4_rtl_1_dqs_t (ddr4_rtl_1_dqs_t[DDR1_DQ_LSB/8 +: DDR1_DQ_W/8]),
     .ddr4_rtl_1_odt (ddr4_rtl_1_odt),
     .ddr4_rtl_1_reset_n (ddr4_rtl_1_reset_n),
     .sys_reset (1'b0),

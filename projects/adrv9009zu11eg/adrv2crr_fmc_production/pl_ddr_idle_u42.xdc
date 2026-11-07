@@ -1,0 +1,26 @@
+# U42 is unused when PL_DDR1_MAP=1 (MIG 1 (ddr4_1) drives only U41).
+# Its data pins are left unconnected; the pin locations come from the main
+# constraint file, only the I/O standard and the DQS_C locations are set here.
+
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[16]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[17]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[18]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[19]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[20]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[21]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[22]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[23]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[24]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[25]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[26]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[27]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[28]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[29]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[30]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dq[31]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dm_n[2]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dm_n[3]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dqs_t[2]}]
+set_property IOSTANDARD LVCMOS12 [get_ports {ddr4_rtl_1_dqs_t[3]}]
+set_property -dict {PACKAGE_PIN A26 IOSTANDARD LVCMOS12} [get_ports {ddr4_rtl_1_dqs_c[2]}]
+set_property -dict {PACKAGE_PIN C24 IOSTANDARD LVCMOS12} [get_ports {ddr4_rtl_1_dqs_c[3]}]

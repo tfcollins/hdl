@@ -1,4 +1,39 @@
-add_files -fileset constrs_1 -norecurse ./prod_constr.xdc
+set prod_dir [file normalize [file dirname [info script]]]
+
+add_files -fileset constrs_1 -norecurse $prod_dir/prod_constr.xdc
+
+# PL DDR4 data lane mapping (see system_top.v PL_DDR*_MAP)
+#   0 - both parts, 32-bit; 1 - lower part only, 16-bit; 2 - upper part only, 16-bit
+
+foreach {mig param} {0 PL_DDR0_MAP 1 PL_DDR1_MAP} {
+  if {[info exists ad_project_params($param)]} {
+    set pl_ddr_map($mig) $ad_project_params($param)
+  } else {
+    set pl_ddr_map($mig) 0
+  }
+  if {[lsearch {0 1 2} $pl_ddr_map($mig)] < 0} {
+    error "$param must be 0, 1 or 2, got $pl_ddr_map($mig)"
+  }
+  if {$pl_ddr_map($mig) == 0} {
+    set pl_ddr_dq_width($mig) 32
+    set pl_ddr_axi_width($mig) 256
+    set pl_ddr_axi_addr_width($mig) 31
+  } else {
+    set pl_ddr_dq_width($mig) 16
+    set pl_ddr_axi_width($mig) 128
+    set pl_ddr_axi_addr_width($mig) 30
+  }
+}
+
+# The data pins of the unused part have no MIG driver, give them an I/O standard
+
+array set pl_ddr_idle_part {0,1 u31 0,2 u30 1,1 u42 1,2 u41}
+foreach mig {0 1} {
+  if {$pl_ddr_map($mig) != 0} {
+    add_files -fileset constrs_1 -norecurse \
+      $prod_dir/pl_ddr_idle_$pl_ddr_idle_part($mig,$pl_ddr_map($mig)).xdc
+  }
+}
 
 # ports
 
@@ -132,9 +167,9 @@ set_property -dict [list CONFIG.FREQ_HZ {300000000}] [get_bd_intf_ports ddr4_ref
 
 ad_ip_instance ip:ddr4 ddr4_0
 
-ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_DataWidth {32}
-ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_AxiDataWidth {256}
-ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_AxiAddressWidth {31}
+ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_DataWidth $pl_ddr_dq_width(0)
+ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_AxiDataWidth $pl_ddr_axi_width(0)
+ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_AxiAddressWidth $pl_ddr_axi_addr_width(0)
 #ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_TimePeriod {1250}
 ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_InputClockPeriod {3334}
 ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E}
@@ -142,6 +177,25 @@ ad_ip_parameter ddr4_0 CONFIG.C0.BANK_GROUP_WIDTH {1}
 ad_ip_parameter ddr4_0 CONFIG.C0.DDR4_CasLatency {18}
 
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 ddr4_0_rstgen
+
+# ddr4_1 and the TX DAC FIFO are created in ../common/adrv9009zu11eg_bd.tcl as
+# a 32-bit, 2 GB interface; narrow them when a single part is selected
+
+if {$pl_ddr_map(1) != 0} {
+  ad_ip_parameter ddr4_1 CONFIG.C0.DDR4_DataWidth $pl_ddr_dq_width(1)
+  ad_ip_parameter ddr4_1 CONFIG.C0.DDR4_AxiDataWidth $pl_ddr_axi_width(1)
+  ad_ip_parameter ddr4_1 CONFIG.C0.DDR4_AxiAddressWidth $pl_ddr_axi_addr_width(1)
+
+  ad_ip_parameter $dac_fifo_name CONFIG.AXI_DATA_WIDTH $pl_ddr_axi_width(1)
+  ad_ip_parameter $dac_fifo_name CONFIG.AXI_SIZE 4
+  ad_ip_parameter $dac_fifo_name CONFIG.AXI_ADDRESS_LIMIT 0xbfffffff
+
+  delete_bd_objs [get_bd_addr_segs $dac_fifo_name/axi/SEG_ddr4_1_C0_DDR4_ADDRESS_BLOCK]
+  create_bd_addr_seg -range 0x40000000 -offset 0x80000000 \
+    [get_bd_addr_spaces $dac_fifo_name/axi] \
+    [get_bd_addr_segs ddr4_1/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] \
+    SEG_ddr4_1_C0_DDR4_ADDRESS_BLOCK
+}
 
 ad_ip_instance smartconnect sconnect_0
 ad_ip_parameter sconnect_0 CONFIG.NUM_SI 1
@@ -219,7 +273,7 @@ ad_connect sconnect_0/aresetn ddr4_0_rstgen/peripheral_aresetn
 # MIG 0 does not fit the 256 MB low window of M_AXI_HPM0_FPD, place it in the
 # high window (0x4_0000_0000) so the PS can access it
 
-create_bd_addr_seg -range 0x80000000 -offset 0x400000000 \
+create_bd_addr_seg -range [expr 1 << $pl_ddr_axi_addr_width(0)] -offset 0x400000000 \
   [get_bd_addr_spaces sys_ps8/Data] \
   [get_bd_addr_segs ddr4_0/C0_DDR4_MEMORY_MAP/C0_DDR4_ADDRESS_BLOCK] \
   SEG_ddr4_0_C0_DDR4_ADDRESS_BLOCK

@@ -52,10 +52,41 @@ shared by both of its parts. The init_calib_complete outputs of the two MIGs are
 individual part.
 
 The MIG 0 pins are constrained in prod_constr.xdc and the MIG 1 pins in ../common/adrv9009zu11eg_constr.xdc.
-MIG 0 is accessed only by the PS through M_AXI_HPM0_FPD, at physical address 0x4_0000_0000 (2 GB). MIG 1
-is used by the TX DAC FIFO (axi_tx_fifo).
+MIG 0 is accessed only by the PS through M_AXI_HPM0_FPD, at physical address 0x4_0000_0000 (2 GB, 1 GB in a
+single part build). MIG 1 is used by the TX DAC FIFO (axi_tx_fifo).
 
 The PS DDR is configured in sys_ps8 as a 64-bit interface with ECC. Its calibration status is not exported to the PL.
+
+Single part builds
+~~~~~~~~~~~~~~~~~~
+
+To identify the failing part, each MIG can be reduced to a 16-bit interface on one of its two parts. The
+PL_DDR0_MAP (MIG 0) and PL_DDR1_MAP (MIG 1) build parameters select the parts:
+
++-------+--------------------+----------------+----------------+
+| Value | Interface          | MIG 0 (ddr4_0) | MIG 1 (ddr4_1) |
++=======+====================+================+================+
+| 0     | 32-bit, 2 GB       | U30 + U31      | U41 + U42      |
++-------+--------------------+----------------+----------------+
+| 1     | 16-bit, 1 GB       | U30            | U41            |
++-------+--------------------+----------------+----------------+
+| 2     | 16-bit, 1 GB       | U31            | U42            |
++-------+--------------------+----------------+----------------+
+
+The default is 0 (this folder). Two more folders build the single part variants:
+
+* ../adrv2crr_fmc_production_ddr_lo: PL_DDR0_MAP=1, PL_DDR1_MAP=1 (U30, U41)
+* ../adrv2crr_fmc_production_ddr_hi: PL_DDR0_MAP=2, PL_DDR1_MAP=2 (U31, U42)
+
+In a single part build, calib bit 0 and bit 1 of ddr_calib_gpio each identify a single part. Both folders also
+accept the parameters from the environment, for example ``make PL_DDR0_MAP=2 PL_DDR1_MAP=0``.
+
+The address, command, clock and reset signals are shared by both parts of a MIG. If a MIG fails to
+calibrate in both the lo and the hi build, suspect these shared signals before the parts.
+
+In a 16-bit build the unused part's DQ, DQS and DM pins are left unconnected (pl_ddr_idle_*.xdc) and the
+MIG address space is 1 GB. For MIG 1, the TX DAC FIFO (axi_tx_fifo) switches to a 128-bit AXI interface
+limited to 0x80000000 - 0xBFFFFFFF.
 
 +----------------+-----------+------+-----------------+----------+-----------+-----------+-------+
 | Interface      | Calib bit | Part | DQ              | DQS      | DM        | FPGA bank | Sheet |

@@ -7,6 +7,10 @@
 PROJECT_NAME := adrv2crr_fmc_prod
 
 M_DEPS += prod_constr.xdc
+M_DEPS += pl_ddr_idle_u30.xdc
+M_DEPS += pl_ddr_idle_u31.xdc
+M_DEPS += pl_ddr_idle_u41.xdc
+M_DEPS += pl_ddr_idle_u42.xdc
 M_DEPS += prod_bd.tcl
 M_DEPS += ../common/adrv9009zu11eg_bd.tcl
 M_DEPS += ../common/adrv2crr_fmc_bd.tcl

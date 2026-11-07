@@ -15,6 +15,8 @@ adi_project adrv2crr_fmc_prod 0 [list \
   RX_OS_JESD_M    [get_env_param RX_OS_JESD_M  4] \
   RX_OS_JESD_L    [get_env_param RX_OS_JESD_L  4] \
   RX_OS_JESD_S    [get_env_param RX_OS_JESD_S  1] \
+  PL_DDR0_MAP     [get_env_param PL_DDR0_MAP   0] \
+  PL_DDR1_MAP     [get_env_param PL_DDR1_MAP   0] \
 ]
 
 adi_project_files adrv2crr_fmc_prod [list \

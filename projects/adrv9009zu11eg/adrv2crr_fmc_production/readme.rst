@@ -48,8 +48,10 @@ The PL DDR is driven by two MIG (Xilinx Memory Interface Generator) DDR4 control
 
 Each MIG drives two x16 parts as a single rank 32-bit bus. The address, command and clock signals of a MIG are
 shared by both of its parts. The init_calib_complete outputs of the two MIGs are read through ddr_calib_gpio
-(0x43A00000): bit 0 is MIG 0, bit 1 is MIG 1. A 0 on a bit identifies the failing MIG (pair of parts), not the
-individual part.
+(0x43A00000 in the block design, 0x83A00000 for the PS: on ZynqMP ad_cpu_interconnect places the CPU
+peripherals on M_AXI_HPM0_LPD, 0x4000_0000 above their nominal address): bit 0 is MIG 0, bit 1 is MIG 1. A 0
+on a bit identifies the failing MIG (pair of parts), not the individual part. From Linux:
+``devmem 0x83A00000 32``.
 
 The MIG 0 pins are constrained in prod_constr.xdc and the MIG 1 pins in ../common/adrv9009zu11eg_constr.xdc.
 MIG 0 is accessed only by the PS through M_AXI_HPM0_FPD, at physical address 0x4_0000_0000 (2 GB, 1 GB in a
